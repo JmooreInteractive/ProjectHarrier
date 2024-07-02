@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
     private AudioClip _level1BackgroundMusic;
     [SerializeField]
     private AudioClip _onFail; // On fail clip
-
+    
     private AudioSource _audioSource;
     [SerializeField]
     private AudioSource _audioSourceTwo; // Added audio source for onfail
@@ -25,6 +25,8 @@ public class GameManager : MonoBehaviour
 
     [SerializeField]
     private Animator _curtainAnimator;
+    [SerializeField]
+    public Animator playerAnimator;
 
     [Header("Game HUD")]
     [SerializeField] 
@@ -82,6 +84,7 @@ public class GameManager : MonoBehaviour
         // Fail sfx when player is killed
         _audioSourceTwo.clip = _onFail;
         _audioSourceTwo.Play();
+        playerAnimator.SetBool("Death", true);
         if(_lives > 1)
         {
             StartCoroutine(IE_RespawnPlayer());

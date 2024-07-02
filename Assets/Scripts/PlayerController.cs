@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Platformer.Mechanics
@@ -33,6 +34,8 @@ namespace Platformer.Mechanics
         SpriteRenderer spriteRenderer;
         internal Animator animator;
 
+        public Animator playerAnimator;
+
         public Bounds Bounds => collider2d.bounds;
 
         void Awake()
@@ -53,6 +56,7 @@ namespace Platformer.Mechanics
             if (controlEnabled)
             {
                 move.x = Input.GetAxis("Horizontal");
+                playerAnimator.SetFloat("Speed", Mathf.Abs(move.x));
                 if (jumpState == JumpState.Grounded && Input.GetButtonDown("Jump") && !InvertGravity)
                     jumpState = JumpState.PrepareToJump;
                 else if (Input.GetButtonUp("Jump"))
@@ -77,21 +81,29 @@ namespace Platformer.Mechanics
                     jumpState = JumpState.Jumping;
                     jump = true;
                     stopJump = false;
+                    playerAnimator.SetBool("Jump Squat", true);
+                    audioSource.clip = jumpAudio;
+                    audioSource.Play();
                     break;
                 case JumpState.Jumping:
                     if (!IsGrounded)
                     {
                         jumpState = JumpState.InFlight;
+                        playerAnimator.SetBool("Jump Squat", false);
+                        playerAnimator.SetBool("Jumping", true);
                     }
                     break;
                 case JumpState.InFlight:
                     if (IsGrounded)
                     {
                         jumpState = JumpState.Landed;
+                        playerAnimator.SetBool("Jumping", false);
+                        playerAnimator.SetBool("Landing", true);
                     }
                     break;
                 case JumpState.Landed:
                     jumpState = JumpState.Grounded;
+                    playerAnimator.SetBool("Landing", false);
                     break;
             }
         }
