@@ -1,135 +1,125 @@
 using UnityEngine;
 
-namespace Platformer.Mechanics
+public class PlayerController : MonoBehaviour
 {
-    /// <summary>
-    /// This is the main class used to implement control of the player.
-    /// It is a superset of the AnimationController class, but is inlined to allow for any kind of customisation.
-    /// </summary>
-    public class PlayerController : KinematicObject
+    [SerializeField]
+    private float _moveSpeed = 3.5F;
+
+    [SerializeField]
+    private float _jumpHeight = 3F;
+
+    [SerializeField]
+    private float _jumpTime = 0.5F;
+
+    #region --- Derived Jump Speed & Gravity Params ---
+
+    // TODO
+    public float JumpSpeed { get; private set; }
+    public float Gravity1 { get; private set; }
+    public float Gravity2 { get; private set; }
+
+    #endregion
+
+    [SerializeField]
+    private float _coyoteTime = 0.05F;
+
+    [SerializeField]
+    private float _jumpBuffer = 0.05F;
+
+    [SerializeField, TextArea(1, 4)]
+    private string _toString;
+
+    private float _timeLastJumped;
+    private float _timeLastGrounded;
+
+    private bool _prevIsGrounded;
+    private bool _isGrounded;
+    private bool _isJumping;
+
+    public KinematicObject Ko { get; private set; }
+
+    public bool IsControlEnabled { get; set; } = true;
+    
+    private void Awake()
     {
-        public AudioClip jumpAudio;
-        public AudioClip respawnAudio;
-        public AudioClip ouchAudio;
+        Init();
+    }
 
-        /// <summary>
-        /// Max horizontal speed of the player.
-        /// </summary>
-        public float maxSpeed = 7;
-        /// <summary>
-        /// Initial jump velocity at the start of a jump.
-        /// </summary>
-        public float jumpTakeOffSpeed = 7;
+    private void OnValidate()
+    {
+        Init();
+    }
 
-        public JumpState jumpState = JumpState.Grounded;
-        private bool stopJump;
-        /*internal new*/ public Collider2D collider2d;
-        /*internal new*/ public AudioSource audioSource;
-        
-        public bool controlEnabled = true;
+    private void Init()
+    {
+        Ko = GetComponent<KinematicObject>();
+        CalculateJumpSpeedAndGravity();
+    }
 
-        bool jump;
-        Vector2 move;
-        SpriteRenderer spriteRenderer;
-        internal Animator animator;
+    private void Start()
+    {
+        Ko.Gravity = Gravity1;
+    }
 
-        public Bounds Bounds => collider2d.bounds;
+    private void CalculateJumpSpeedAndGravity()
+    {
+        JumpSpeed = 5;
+        Gravity1 = -9.81F;
+        Gravity2 = Gravity1 * 2.5F;
+    }
 
-        void Awake()
+    private void Update()
+    {
+        _prevIsGrounded = _isGrounded;
+        _isGrounded = Ko.IsGrounded;
+        if (!_prevIsGrounded && _isGrounded)
         {
-            audioSource = GetComponent<AudioSource>();
-            collider2d = GetComponent<Collider2D>();
-            spriteRenderer = GetComponent<SpriteRenderer>();
-            animator = GetComponent<Animator>();
+            // We landed, reset gravity.
+            _isJumping = false;
+            Ko.Gravity = Gravity1;
         }
 
-        public void StopJump()
+        if (_isGrounded)
         {
-            stopJump = true;
+            _timeLastGrounded = Time.time;
         }
 
-        protected override void Update()
+        if (IsControlEnabled && Input.GetButtonDown("Jump"))
         {
-            if (controlEnabled)
-            {
-                move.x = Input.GetAxis("Horizontal");
-                if (jumpState == JumpState.Grounded && Input.GetButtonDown("Jump") && !InvertGravity)
-                    jumpState = JumpState.PrepareToJump;
-                else if (Input.GetButtonUp("Jump"))
-                {
-                    stopJump = true;
-                }
-            }
-            else
-            {
-                move.x = 0;
-            }
-            UpdateJumpState();
-            base.Update();
+            _timeLastJumped = Time.time;
         }
 
-        void UpdateJumpState()
+        var delta1 = Time.time - _timeLastGrounded;
+        var delta2 = Time.time - _timeLastJumped;
+
+        if (delta1 <= _coyoteTime && delta2 <= _jumpBuffer)
         {
-            jump = false;
-            switch (jumpState)
-            {
-                case JumpState.PrepareToJump:
-                    jumpState = JumpState.Jumping;
-                    jump = true;
-                    stopJump = false;
-                    break;
-                case JumpState.Jumping:
-                    if (!IsGrounded)
-                    {
-                        jumpState = JumpState.InFlight;
-                    }
-                    break;
-                case JumpState.InFlight:
-                    if (IsGrounded)
-                    {
-                        jumpState = JumpState.Landed;
-                    }
-                    break;
-                case JumpState.Landed:
-                    jumpState = JumpState.Grounded;
-                    break;
-            }
+            Jump();
         }
 
-        protected override void ComputeVelocity()
+        if (IsControlEnabled && _isJumping && Input.GetButtonUp("Jump"))
         {
-            if (jump && IsGrounded)
-            {
-                velocity.y = jumpTakeOffSpeed * 1.5F;
-                jump = false;
-            }
-            else if (stopJump)
-            {
-                stopJump = false;
-                if (velocity.y > 0)
-                {
-                    velocity.y = velocity.y * 0.5F;
-                }
-            }
-
-            if (move.x > 0.01f)
-                spriteRenderer.flipX = false;
-            else if (move.x < -0.01f)
-                spriteRenderer.flipX = true;
-
-            // animator.SetBool("grounded", IsGrounded);
-            // animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
-
-            targetVelocity = move * maxSpeed;
+            StopJump();
         }
 
-        public enum JumpState
-        {
-            Grounded,
-            PrepareToJump,
-            Jumping,
-            InFlight,
-            Landed
-        }
+        Ko.Velocity.x = Input.GetAxisRaw("Horizontal") * _moveSpeed;
+
+        _toString = 
+            $"Delta 1: {delta1}\n" +
+            $"Delta 2: {delta2}\n" +
+            $"Should jump: {delta1 <= _coyoteTime && delta2 <= _jumpBuffer}\n" +
+            $"Is jumping: {_isJumping}";
+    }
+
+    public void Jump()
+    {
+        _isJumping = true;
+        Ko.Velocity.y = JumpSpeed;
+        Ko.Gravity = Gravity1;
+    }
+
+    public void StopJump()
+    {
+        Ko.Gravity = Gravity2;
     }
 }

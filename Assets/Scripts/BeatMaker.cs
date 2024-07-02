@@ -1,5 +1,7 @@
 using UnityEngine;
 
+// TODO: @Guille 
+// This class triggers the beat every N milliseconds. I don't think you have to make any changes here.
 public class BeatMaker : MonoBehaviour
 {
     public static BeatMaker Instance { get; private set; }

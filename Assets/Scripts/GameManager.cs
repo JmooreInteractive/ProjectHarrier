@@ -1,5 +1,4 @@
 using System.Collections;
-using Platformer.Mechanics;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -72,7 +71,7 @@ public class GameManager : MonoBehaviour
     private IEnumerator IE_RespawnPlayer()
     {
         var controller = _playerTransform.GetComponent<PlayerController>();
-        controller.controlEnabled = false;
+        controller.IsControlEnabled = false;
 
         _curtainAnimator.SetTrigger("FadeIn");
         yield return new WaitForSeconds(_respawnFadeTime + 0.05F);
@@ -86,7 +85,7 @@ public class GameManager : MonoBehaviour
         _curtainAnimator.SetTrigger("FadeOut");
         yield return new WaitForSeconds(_respawnFadeTime + 0.05F);
 
-        controller.controlEnabled = true;
+        controller.IsControlEnabled = true;
         _audioSource.Play();
         BeatMaker.Instance.PlayBeats(60);
     }
@@ -94,7 +93,7 @@ public class GameManager : MonoBehaviour
     private void ResetLevelState()
     {
         var controller = _playerTransform.GetComponent<PlayerController>();
-        controller.InvertGravity = false;
+        controller.Ko.InvertGravity = false;
         _playerHealth.TopOff();
         _playerTransform.SetPositionAndRotation(_startPosition, _startRotation);
         OnPlayerRespawned?.Invoke();

@@ -1,4 +1,3 @@
-using Platformer.Mechanics;
 using UnityEngine;
 
 public class AntiGravityMushroom : MonoBehaviour
@@ -79,16 +78,15 @@ public class AntiGravityMushroom : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D collider)
     {
         Debug.Log("OnTriggerEnter2D");
-        var controller = collider.GetComponent<PlayerController>();
-        if (controller == null)
+        var ko = collider.GetComponent<KinematicObject>();
+        if (ko == null)
         {
             return;
         }
 
         if (IsActive)
         {
-            controller.InvertGravity = true;
-            controller.StopJump();
+            ko.InvertGravity = true;
         }
     }
 
@@ -102,7 +100,7 @@ public class AntiGravityMushroom : MonoBehaviour
 
         if (IsActive)
         {
-            controller.InvertGravity = false;
+            controller.Ko.InvertGravity = false;
         }
     }
 

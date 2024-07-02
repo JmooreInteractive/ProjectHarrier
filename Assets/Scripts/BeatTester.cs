@@ -1,5 +1,13 @@
 using UnityEngine;
 
+// TODO: @Guille
+// This class exists on every BouncyMushroom. When the player collides with the mushroom, we call Interact().
+// This calls OnSuccess or OnFailure depending on if the collision happened on the beat or not.
+//
+// We now want to support different beat patterns on every BouncyMushroom. I suggest we add a
+// Beat[] _beats = new Beat[] { new Beat(numBeats: 1, isActive: true), new Beat(numBeats: 2, isActive: false) }.
+// Instead of Interact and Update, just make a new method bool TestBeat(). This beat returns true
+// if a beat is currently active.
 public class BeatTester : MonoBehaviour
 {   
     [field: SerializeField]
